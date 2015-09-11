@@ -43,7 +43,7 @@ namespace SplatoonRecorder
 
     public enum BattleType:byte
     {
-        ナワバリ,ガチエリア,ガチヤグラ,ガチホコ
+        ナワバリ,フェス,ガチエリア,ガチヤグラ,ガチホコ
     }
     
     public enum Result:byte

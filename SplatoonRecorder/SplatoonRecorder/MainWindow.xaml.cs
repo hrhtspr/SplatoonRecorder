@@ -42,6 +42,7 @@ namespace SplatoonRecorder
             stg1.IsChecked = true;
             battleType.SelectedIndex = 0;
             resultWin.IsChecked = true;
+            udemae.SelectedIndex = 0;
         }
 
         public void Clear()
@@ -76,18 +77,31 @@ namespace SplatoonRecorder
         }
         public bool DataCheck()
         {
-            if (this.battleType.SelectedIndex == 0)
+            var battleType = (BattleType)this.battleType.SelectedValue;
+            if (battleType == BattleType.ナワバリ)
             {
                 if (this.nawabariNuri.Value.HasValue)
                 {
                     return true;
                 }
+                else
+                {
+                    message.Content = "塗りポイントを記入してください";
+                }
+            }
+            else if (battleType == BattleType.フェス)
+            {
+                return true;
             }
             else
             {
                 if (this.udemaePoint.Value.HasValue)
                 {
                     return true;
+                }
+                else
+                {
+                    message.Content = "ウデマエポイントを記入してください";
                 }
             }
             return false;
@@ -108,8 +122,8 @@ namespace SplatoonRecorder
                 data.Nuri = (short)(data.BattleType == BattleType.ナワバリ ? this.nawabariNuri.Value.Value : -1);
                 data.Kill = (sbyte)(this.kill.Value.HasValue ? this.kill.Value.Value : -1);
                 data.Death = (sbyte)(this.death.Value.HasValue ? this.death.Value.Value : -1);
-                data.Udemae = data.BattleType != BattleType.ナワバリ ? this.udemae.SelectedValue.ToString() : "";
-                data.UdemaePoint = (sbyte)(data.BattleType != BattleType.ナワバリ ? this.udemaePoint.Value.Value : -1);
+                data.Udemae = data.BattleType != BattleType.ナワバリ && data.BattleType != BattleType.フェス ? this.udemae.SelectedValue.ToString() : "";
+                data.UdemaePoint = (sbyte)(data.BattleType != BattleType.ナワバリ && data.BattleType != BattleType.フェス ? this.udemaePoint.Value.Value : -1);
             }
             catch (Exception)
             {
@@ -135,13 +149,29 @@ namespace SplatoonRecorder
 
         private void battleType_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (this.battleType.SelectedIndex==0)
+            var battleType = (BattleType)this.battleType.SelectedValue;
+            if (battleType == BattleType.ナワバリ || battleType == BattleType.フェス)
             {
-                this.nawabariOnly.Visibility = System.Windows.Visibility.Visible;
+
                 this.gachiOnly.Visibility = System.Windows.Visibility.Hidden;
                 this.gachiEx.IsEnabled = false;
                 this.isTag.IsEnabled = false;
                 this.isTag.IsChecked = false;
+                if (battleType == BattleType.ナワバリ)
+                {
+                    this.fes.Visibility = System.Windows.Visibility.Hidden;
+                    this.nawabariOnly.Visibility = System.Windows.Visibility.Visible;
+                }
+                else
+                {
+                    this.fes.Visibility = System.Windows.Visibility.Visible;
+                    this.nawabariOnly.Visibility = System.Windows.Visibility.Hidden;
+                    if (this.battleType.SelectedIndex >= 2)
+                    {
+                        this.battleType.SelectedIndex = 0;
+                    }
+                }
+                message.Content = "";
             }
             else
             {
@@ -149,10 +179,10 @@ namespace SplatoonRecorder
                 this.gachiOnly.Visibility = System.Windows.Visibility.Visible;
                 this.gachiEx.IsEnabled = true;
                 this.isTag.IsEnabled = true;
-                
+                this.fes.Visibility = System.Windows.Visibility.Hidden;
             }
         }
-        
+
 
         private void resultKO_Checked(object sender, RoutedEventArgs e)
         {
@@ -169,15 +199,18 @@ namespace SplatoonRecorder
             Clear();
         }
 
-        private void Add_Click(object sender, RoutedEventArgs e)
+        private async void Add_Click(object sender, RoutedEventArgs e)
         {
             if (DataCheck())
             {
                 DataAdd();
                 Clear();
+                message.Content = "データを追加しました";
+                await Task.Delay(1500);
+                message.Content = "";
             }
         }
 
-        
+
     }
 }

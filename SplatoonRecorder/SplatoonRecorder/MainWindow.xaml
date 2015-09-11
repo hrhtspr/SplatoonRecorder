@@ -26,8 +26,10 @@
                     <ComboBox Name="stage1"/>
                     <RadioButton GroupName="stage" Name="stg2"/>
                     <ComboBox Name="stage2"/>
-                    <RadioButton GroupName="stage" Name="stg3"/>
-                    <ComboBox Name="stage3"/>
+                    <StackPanel Name="fes">
+                        <RadioButton GroupName="stage" Name="stg3"/>
+                        <ComboBox Name="stage3"/>
+                    </StackPanel>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal">
                     <StackPanel>
@@ -68,6 +70,7 @@
             <StackPanel Orientation="Horizontal">
                 <Button Content="追加" Click="Add_Click"/>
                 <Button Content="クリア" Click="Clear_Click"/>
+                <Label Content="" Name="message"/>
             </StackPanel>
 
         </Grid>
