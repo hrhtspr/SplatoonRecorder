@@ -21,9 +21,9 @@ namespace SplatoonRecorder
     /// </summary>
     public partial class MainWindow : Window
     {
-        public List<string> Weapons;
-        public List<string> Stages;
-        public List<string> Udemaes;
+        public static List<string> Weapons;
+        public static List<string> Stages;
+        public static List<string> Udemaes;
         const string ConfigFileName = "config.csv";
         public MainWindow()
         {
@@ -136,7 +136,7 @@ namespace SplatoonRecorder
             var dataFileName = this.name.Text + ".csv";
             if (!File.Exists(dataFileName))
             {
-                using (var sw = new StreamWriter(dataFileName, true, Encoding.UTF8))
+                using (var sw = new StreamWriter(dataFileName, true,Encoding.UTF8))
                 {
                     sw.WriteLine(BattleData.DataLabel);
                 }
@@ -191,7 +191,7 @@ namespace SplatoonRecorder
 
         private void resultBehind_Checked(object sender, RoutedEventArgs e)
         {
-            this.resultKO.IsChecked = true;
+            this.resultKO.IsChecked = false;
         }
 
         private void Clear_Click(object sender, RoutedEventArgs e)
@@ -209,6 +209,12 @@ namespace SplatoonRecorder
                 await Task.Delay(1500);
                 message.Content = "";
             }
+        }
+
+        private void Analysis_Click(object sender, RoutedEventArgs e)
+        {
+            var window = new AnalysisView(name.Text);
+            window.Show();
         }
 
 

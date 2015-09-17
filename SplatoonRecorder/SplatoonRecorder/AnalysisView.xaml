@@ -1,0 +1,107 @@
+﻿<Window x:Class="SplatoonRecorder.AnalysisView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="AnalysisView" Height="362" Width="560" FontSize="14">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="30"/>
+            <RowDefinition Height="30"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="30"/>
+        </Grid.RowDefinitions>
+        <StackPanel>
+            <StackPanel Orientation="Horizontal">
+                <Label Content="名前"/>
+                <TextBox TextWrapping="Wrap" Width="120" Name="name"/>
+                <Button Content="更新" Width="75" Click="Refresh_Click"/>
+                <ComboBox Name="viewCount" Margin="40,0,0,0" SelectionChanged="SelectionChanged"/>
+            </StackPanel>
+        </StackPanel>
+        <Grid Grid.Row="1">
+            <StackPanel Orientation="Horizontal">
+                <Label Content="ブキ"/>
+                <ComboBox Name="weapon" Width="180" SelectionChanged="SelectionChanged"/>
+                <Label Content="ルール"/>
+                <ComboBox Name="rule" Width="80" SelectionChanged="SelectionChanged"/>
+                <Label Content="ステージ"/>
+                <ComboBox Name="stage" Width="150" SelectionChanged="SelectionChanged"/>
+            </StackPanel>
+        </Grid>
+        <Grid Grid.Row="2">
+            <StackPanel>
+                <GroupBox Header="勝敗">
+                    <StackPanel Orientation="Horizontal">
+                    <TextBlock>
+                        <TextBlock.Text>
+                            <MultiBinding StringFormat="{}{0}勝 {1}敗 勝率{2:N1}%">
+                                <Binding Path="TotalWin"/>
+                                <Binding Path="TotalLose"/>
+                                <Binding Path="WinRatio"/>
+                            </MultiBinding>
+                        </TextBlock.Text>
+                    </TextBlock>
+                </StackPanel>
+                </GroupBox>
+                <GroupBox Header="キルデス" Name="killdeath">
+                    <StackPanel>
+                        <TextBlock>
+                            <TextBlock.Text>
+                                <MultiBinding StringFormat="計{0}戦で{1}キル {2}デス キルレシオ{3:N3}">
+                                    <Binding Path="KillDeathCount"/>
+                                    <Binding Path="TotalKill"/>
+                                    <Binding Path="TotalDeath"/>
+                                    <Binding Path="KillRatio"/>
+                                </MultiBinding>
+                            </TextBlock.Text>
+                        </TextBlock>
+                        <TextBlock>
+                            <TextBlock.Text>
+                                <MultiBinding StringFormat="キル 最小{0} 平均{1} 最大{2}">
+                                    <Binding Path="MinKill"/>
+                                    <Binding Path="AverageKill"/>
+                                    <Binding Path="MaxKill"/>
+                                </MultiBinding>
+                            </TextBlock.Text>
+                        </TextBlock>
+                        <TextBlock>
+                            <TextBlock.Text>
+                                <MultiBinding StringFormat="デス 最小{0} 平均{1} 最大{2}">
+                                    <Binding Path="MinDeath"/>
+                                    <Binding Path="AverageDeath"/>
+                                    <Binding Path="MaxDeath"/>
+                                </MultiBinding>
+                            </TextBlock.Text>
+                        </TextBlock>
+                        <TextBlock>
+                            <TextBlock.Text>
+                                <MultiBinding StringFormat="キルレシオ 最小{0:N3} 最大{1:N3}">
+                                    <Binding Path="MinKillRatio"/>
+                                    <Binding Path="MaxKillRatio"/>
+                                </MultiBinding>
+                            </TextBlock.Text>
+                        </TextBlock>
+                    </StackPanel>
+                </GroupBox>
+                <GroupBox Header="ヌリポイント" Name="nawabari">
+                    <TextBlock>
+                        <TextBlock.Text>
+                            <MultiBinding StringFormat="計{0}戦で{1}ポイント 最小{2} 平均{3} 最大{4}">
+                                <Binding Path="NawabariCount"/>
+                                <Binding Path="TotalNuri"/>
+                                <Binding Path="MinNuri"/>
+                                <Binding Path="AverageNuri"/>
+                                <Binding Path="MaxNuri"/>
+                            </MultiBinding>
+                        </TextBlock.Text>
+                    </TextBlock>
+                </GroupBox>
+            </StackPanel>
+        </Grid>
+        <Grid Grid.Row="3">
+            <StackPanel Orientation="Horizontal">
+                <Label Content="{Binding t}" Name="message"/>
+            </StackPanel>
+
+        </Grid>
+    </Grid>
+</Window>
