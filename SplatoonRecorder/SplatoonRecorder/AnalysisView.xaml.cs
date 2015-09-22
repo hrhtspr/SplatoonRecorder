@@ -25,6 +25,8 @@ namespace SplatoonRecorder
         public AnalysisView(string name)
         {
             InitializeComponent();
+            var bd = new Binding() { Source = MainWindow.Names };
+            this.name.SetBinding(ComboBox.ItemsSourceProperty, bd);
             this.name.Text = name;
             Datas = new List<BattleData>();
             NowView = Datas.ToList();
@@ -110,6 +112,7 @@ namespace SplatoonRecorder
                     var kilre = data.Death > 0 ? 1.0 * data.Kill / data.Death : data.Kill;
                     ad.MaxKillRatio = Math.Max(ad.MaxKillRatio, kilre);
                     ad.MinKillRatio = Math.Min(ad.MinKillRatio, kilre);
+                    ad.AverageKillDeathRatio += kilre;
                 }
 
                 if (data.BattleType == BattleType.ナワバリ)
@@ -120,6 +123,11 @@ namespace SplatoonRecorder
                     ad.MinNuri = Math.Min(ad.MinNuri, data.Nuri);
                 }
             }
+            if (ad.KillDeathCount > 0)
+            {
+                ad.AverageKillDeathRatio /= ad.KillDeathCount;
+            }
+
             this.DataContext = ad;
 
             if (ad.KillDeathCount > 0)
@@ -139,6 +147,7 @@ namespace SplatoonRecorder
             {
                 this.nawabari.Visibility = System.Windows.Visibility.Collapsed;
             }
+            
         }
 
         private void Refresh_Click(object sender, RoutedEventArgs e)
@@ -217,6 +226,7 @@ namespace SplatoonRecorder
         public double AverageKill { get { return KillDeathCount > 0 ? 1.0 * TotalKill / KillDeathCount : 0; } }
         public double AverageDeath { get { return KillDeathCount > 0 ? 1.0 * TotalDeath / KillDeathCount : 0; } }
         public double KillRatio { get { return KillDeathCount > 0 ? (TotalDeath > 0 ? 1.0 * TotalKill / TotalDeath : 1.0 * TotalKill) : 0; } }
+        public double AverageKillDeathRatio { get; set; }
         public int MaxKill { get; set; }
         public int MinKill { get; set; }
         public int MaxDeath { get; set; }

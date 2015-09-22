@@ -116,7 +116,7 @@ namespace SplatoonRecorder
             {
                 return false;
             }
-            if (data.BattleType != SplatoonRecorder.BattleType.ナワバリ && data.BattleType != SplatoonRecorder.BattleType.フェス)
+            if (data.BattleType == SplatoonRecorder.BattleType.ナワバリ || data.BattleType == SplatoonRecorder.BattleType.フェス)
             {
                 data.Udemae = "";
                 data.UdemaePoint = (sbyte)-1;
@@ -126,7 +126,7 @@ namespace SplatoonRecorder
                 data.Udemae = d[11];
                 if (sbyte.TryParse(d[12], out sb))
                 {
-                    data.Death =  sb;
+                    data.UdemaePoint =  sb;
                 }
                 else
                 {

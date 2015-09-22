@@ -11,7 +11,7 @@
         </Grid.RowDefinitions>
         <StackPanel Orientation="Horizontal">
             <Label Content="名前"/>
-            <TextBox TextWrapping="Wrap" Text="data" Width="120" Name="name"/>
+            <ComboBox Width="120" Name="name" IsEditable="True"/>
             <Button Content="解析" Width="75" Click="Analysis_Click"/>
 
         </StackPanel>

@@ -13,6 +13,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.IO;
+using System.Collections.ObjectModel;
 
 namespace SplatoonRecorder
 {
@@ -24,7 +25,9 @@ namespace SplatoonRecorder
         public static List<string> Weapons;
         public static List<string> Stages;
         public static List<string> Udemaes;
+        public static ObservableCollection<string> Names;
         const string ConfigFileName = "config.csv";
+        const string NamesFileName = "names.csv";
         public MainWindow()
         {
             InitializeComponent();
@@ -43,6 +46,7 @@ namespace SplatoonRecorder
             battleType.SelectedIndex = 0;
             resultWin.IsChecked = true;
             udemae.SelectedIndex = 0;
+            name.SelectedIndex = 0;
         }
 
         public void Clear()
@@ -74,6 +78,20 @@ namespace SplatoonRecorder
             {
                 this.Close();
             }
+            if (File.Exists(NamesFileName))
+            {
+                using (var sr = new StreamReader(NamesFileName))
+                {
+                    var str = sr.ReadLine();
+                    Names = new ObservableCollection<string>(str.Split(','));
+                }
+            }
+            else
+            {
+                Names = new ObservableCollection<string>();
+            }
+            var bd =new Binding() {Source = Names };
+            this.name.SetBinding(ComboBox.ItemsSourceProperty,bd);
         }
         public bool DataCheck()
         {
@@ -145,6 +163,15 @@ namespace SplatoonRecorder
             {
                 sw.WriteLine(data.ToString());
             }
+            if (!Names.Contains(this.name.Text))
+            {
+                Names.Insert(0, this.name.Text);
+                using (var sw = new StreamWriter(NamesFileName, false, Encoding.UTF8))
+                {
+                    sw.WriteLine(string.Join(",",Names));
+                }
+            }
+            
         }
 
         private void battleType_SelectionChanged(object sender, SelectionChangedEventArgs e)

@@ -12,7 +12,7 @@
         <StackPanel>
             <StackPanel Orientation="Horizontal">
                 <Label Content="名前"/>
-                <TextBox TextWrapping="Wrap" Width="120" Name="name"/>
+                <ComboBox Width="120" Name="name" IsEditable="True"/>
                 <Button Content="更新" Width="75" Click="Refresh_Click"/>
                 <ComboBox Name="viewCount" Margin="40,0,0,0" SelectionChanged="SelectionChanged"/>
             </StackPanel>
@@ -56,7 +56,7 @@
                         </TextBlock>
                         <TextBlock>
                             <TextBlock.Text>
-                                <MultiBinding StringFormat="キル 最小{0} 平均{1} 最大{2}">
+                                <MultiBinding StringFormat="キル 最小{0} 平均{1:N2} 最大{2}">
                                     <Binding Path="MinKill"/>
                                     <Binding Path="AverageKill"/>
                                     <Binding Path="MaxKill"/>
@@ -65,7 +65,7 @@
                         </TextBlock>
                         <TextBlock>
                             <TextBlock.Text>
-                                <MultiBinding StringFormat="デス 最小{0} 平均{1} 最大{2}">
+                                <MultiBinding StringFormat="デス 最小{0} 平均{1:N2} 最大{2}">
                                     <Binding Path="MinDeath"/>
                                     <Binding Path="AverageDeath"/>
                                     <Binding Path="MaxDeath"/>
@@ -74,8 +74,9 @@
                         </TextBlock>
                         <TextBlock>
                             <TextBlock.Text>
-                                <MultiBinding StringFormat="キルレシオ 最小{0:N3} 最大{1:N3}">
+                                <MultiBinding StringFormat="キルレシオ 最小{0:N3} 平均{1:N3} 最大{2:N3}">
                                     <Binding Path="MinKillRatio"/>
+                                    <Binding Path="AverageKillDeathRatio"/>
                                     <Binding Path="MaxKillRatio"/>
                                 </MultiBinding>
                             </TextBlock.Text>
@@ -85,7 +86,7 @@
                 <GroupBox Header="ヌリポイント" Name="nawabari">
                     <TextBlock>
                         <TextBlock.Text>
-                            <MultiBinding StringFormat="計{0}戦で{1}ポイント 最小{2} 平均{3} 最大{4}">
+                            <MultiBinding StringFormat="計{0}戦で{1}ポイント 最小{2} 平均{3:N0} 最大{4}">
                                 <Binding Path="NawabariCount"/>
                                 <Binding Path="TotalNuri"/>
                                 <Binding Path="MinNuri"/>
