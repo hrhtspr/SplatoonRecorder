@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -32,8 +33,16 @@ namespace SplatoonRecorder
             NowView = Datas.ToList();
             viewCount.ItemsSource = Enum.GetValues(typeof(ViewCount));
             viewCount.SelectedIndex = 0;
+            tab.SelectedIndex = 0;
+            winratiolist.Columns.Clear();
+            winratiolist.Columns.Add(new DataGridTextColumn() { Binding = new Binding("Weapon") });
+            foreach (var item in MainWindow.Stages)
+            {
+                winratiolist.Columns.Add(new DataGridTextColumn() { Header = item, Binding = new Binding("Datas[" + item + "]") { StringFormat = "0.0%" } });
+            }
+            winratiolist.Columns.Add(new DataGridTextColumn() { Header = "すべて", Binding = new Binding("Datas[すべて]") { StringFormat = "0.0%" } });
             ReadData();
-            
+
         }
 
         public void ReadData()
@@ -71,7 +80,14 @@ namespace SplatoonRecorder
             this.rule.ItemsSource = new[] { "すべて" }.Concat(r);
             stage.ItemsSource = new[] { "すべて" }.Concat(MainWindow.Stages.Intersect(Datas.Select(p => p.Stage)));
             weapon.SelectedIndex = rule.SelectedIndex = stage.SelectedIndex = 0;
-            Analysis();
+            if (tab.SelectedIndex == 0)
+            {
+                SelectionChangedAbst();
+            }
+            else if (tab.SelectedIndex == 1)
+            {
+                CalculateWinRatios();
+            }
         }
 
         public void Analysis()
@@ -85,6 +101,7 @@ namespace SplatoonRecorder
                 ad.MaxKillRatio = ad.MinKillRatio = Datas[f].Death > 0 ? 1.0 * Datas[f].Kill / Datas[f].Death : Datas[f].Kill;
             }
             f = Datas.FindIndex(p => p.BattleType == BattleType.ナワバリ);
+            List<double> killdeaths = new List<double>();
             if (f >= 0)
             {
                 ad.MaxNuri = ad.MinNuri = Datas[f].Nuri;
@@ -112,7 +129,7 @@ namespace SplatoonRecorder
                     var kilre = data.Death > 0 ? 1.0 * data.Kill / data.Death : data.Kill;
                     ad.MaxKillRatio = Math.Max(ad.MaxKillRatio, kilre);
                     ad.MinKillRatio = Math.Min(ad.MinKillRatio, kilre);
-                    ad.AverageKillDeathRatio += kilre;
+                    killdeaths.Add(kilre);
                 }
 
                 if (data.BattleType == BattleType.ナワバリ)
@@ -125,13 +142,16 @@ namespace SplatoonRecorder
             }
             if (ad.KillDeathCount > 0)
             {
-                ad.AverageKillDeathRatio /= ad.KillDeathCount;
-            }
+                killdeaths = killdeaths.OrderBy(p => p).ToList();
+                if (killdeaths.Count % 2 == 0)
+                {
+                    ad.MedianKillRatio = (killdeaths[killdeaths.Count / 2] + killdeaths[killdeaths.Count / 2 + 1]) * 0.5;
+                }
+                else
+                {
+                    ad.MedianKillRatio = killdeaths[(killdeaths.Count + 1) / 2];
+                }
 
-            this.DataContext = ad;
-
-            if (ad.KillDeathCount > 0)
-            {
                 this.killdeath.Visibility = System.Windows.Visibility.Visible;
             }
             else
@@ -147,7 +167,70 @@ namespace SplatoonRecorder
             {
                 this.nawabari.Visibility = System.Windows.Visibility.Collapsed;
             }
-            
+
+            this.DataContext = ad;
+        }
+        public void CalculateWinRatios()
+        {
+            var ru = (string)rule.SelectedValue;
+            var datas = Datas.Where(p =>
+            {
+                var re = true;
+                if (ru != "すべて")
+                {
+                    if (ru != "ガチマッチ")
+                    {
+                        re &= p.BattleType.ToString() == ru;
+                    }
+                    else
+                    {
+                        re &= p.BattleType.ToString().StartsWith("ガチ");
+                    }
+                }
+                return re;
+            }).Select(p => new { p.Weapon, p.IsWin, p.Stage, p.BattleType }).ToList();
+            var weps = datas.GroupBy(p => p.Weapon).ToDictionary(p => p.Key, p => p.ToList());
+            weps.Add("すべて", datas);
+            var westg = weps.Select(p =>
+            {
+                var t = p.Value.GroupBy(q => q.Stage).ToDictionary(q => q.Key, q => q.ToList());
+                t.Add("すべて", p.Value);
+                var winratios = t.Select(q =>
+                {
+                    var re = q.Value.ToList();
+                    switch ((ViewCount)viewCount.SelectedItem)
+                    {
+                        case ViewCount.最近30試合:
+                            if (re.Count > 30)
+                            {
+                                re.RemoveRange(0, re.Count - 30);
+                            }
+                            break;
+                        case ViewCount.最近50試合:
+                            if (re.Count > 50)
+                            {
+                                re.RemoveRange(0, re.Count - 50);
+                            }
+                            break;
+                        case ViewCount.最近100試合:
+                            if (re.Count > 100)
+                            {
+                                re.RemoveRange(0, re.Count - 100);
+                            }
+                            break;
+                    }
+                    return new { Stage = q.Key, WinRatio = 1.0 * re.Count(r => r.IsWin) / re.Count };
+                }).ToList();
+                foreach (var item in MainWindow.Stages)
+                {
+                    if (winratios.All(q => q.Stage != item))
+                    {
+                        winratios.Add(new { Stage = item, WinRatio = double.NaN });
+                    }
+                }
+                return new { Weapon = p.Key, Datas = winratios.ToDictionary(q => q.Stage, q => q.WinRatio) };
+            });
+            winratiolist.ItemsSource = westg;
         }
 
         private void Refresh_Click(object sender, RoutedEventArgs e)
@@ -155,7 +238,7 @@ namespace SplatoonRecorder
             ReadData();
         }
 
-        private void SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void SelectionChangedAbst()
         {
             var wep = (string)weapon.SelectedValue;
             var ru = (string)rule.SelectedValue;
@@ -187,6 +270,12 @@ namespace SplatoonRecorder
 
             switch ((ViewCount)viewCount.SelectedItem)
             {
+                case ViewCount.最近30試合:
+                    if (NowView.Count > 30)
+                    {
+                        NowView.RemoveRange(0, NowView.Count - 30);
+                    }
+                    break;
                 case ViewCount.最近50試合:
                     if (NowView.Count > 50)
                     {
@@ -200,7 +289,7 @@ namespace SplatoonRecorder
                     }
                     break;
             }
-            if (weapon.SelectedIndex == 0 && rule.SelectedIndex == 0 && stage.SelectedIndex == 0 && viewCount.SelectedIndex==0)
+            if (weapon.SelectedIndex == 0 && rule.SelectedIndex == 0 && stage.SelectedIndex == 0 && viewCount.SelectedIndex == 0)
             {
                 message.Content = "全" + Datas.Count + "件";
             }
@@ -211,6 +300,48 @@ namespace SplatoonRecorder
             Analysis();
         }
 
+        private void tab_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (tab.SelectedIndex == 0)
+            {
+                SelectionChangedAbst();
+            }
+            else if (tab.SelectedIndex == 1)
+            {
+                CalculateWinRatios();
+            }
+        }
+
+        private void viewCount_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (tab.SelectedIndex == 0)
+            {
+                SelectionChangedAbst();
+            }
+            else if (tab.SelectedIndex == 1)
+            {
+                CalculateWinRatios();
+            }
+        }
+
+        private void weapon_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (tab.SelectedIndex == 0)
+            {
+                SelectionChangedAbst();
+            }
+        }
+
+        private void stage_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (tab.SelectedIndex == 0)
+            {
+                SelectionChangedAbst();
+            }
+        }
+
+
+
 
     }
 
@@ -218,7 +349,7 @@ namespace SplatoonRecorder
     {
         public int TotalWin { get; set; }
         public int TotalLose { get; set; }
-        public double WinRatio { get { return 100.0 * TotalWin / (TotalWin + TotalLose); } }
+        public double WinRatio { get { return 1.0 * TotalWin / (TotalWin + TotalLose); } }
 
         public int TotalKill { get; set; }
         public int TotalDeath { get; set; }
@@ -226,7 +357,7 @@ namespace SplatoonRecorder
         public double AverageKill { get { return KillDeathCount > 0 ? 1.0 * TotalKill / KillDeathCount : 0; } }
         public double AverageDeath { get { return KillDeathCount > 0 ? 1.0 * TotalDeath / KillDeathCount : 0; } }
         public double KillRatio { get { return KillDeathCount > 0 ? (TotalDeath > 0 ? 1.0 * TotalKill / TotalDeath : 1.0 * TotalKill) : 0; } }
-        public double AverageKillDeathRatio { get; set; }
+        public double MedianKillRatio { get; set; }
         public int MaxKill { get; set; }
         public int MinKill { get; set; }
         public int MaxDeath { get; set; }
@@ -244,6 +375,10 @@ namespace SplatoonRecorder
 
     public enum ViewCount
     {
-        すべて, 最近50試合, 最近100試合
+        全試合, 最近30試合, 最近50試合, 最近100試合
+    }
+    public class WinRatioData : DynamicObject
+    {
+        public string Weapon { get; set; }
     }
 }

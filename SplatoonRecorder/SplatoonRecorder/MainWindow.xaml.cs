@@ -83,7 +83,7 @@ namespace SplatoonRecorder
                 using (var sr = new StreamReader(NamesFileName))
                 {
                     var str = sr.ReadLine();
-                    Names = new ObservableCollection<string>(str.Split(','));
+                    Names = str != null ? new ObservableCollection<string>(str.Split(',')) : new ObservableCollection<string>();
                 }
             }
             else
