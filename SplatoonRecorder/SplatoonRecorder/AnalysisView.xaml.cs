@@ -34,13 +34,17 @@ namespace SplatoonRecorder
             viewCount.ItemsSource = Enum.GetValues(typeof(ViewCount));
             viewCount.SelectedIndex = 0;
             tab.SelectedIndex = 0;
+            var cv = new WinRatioConverter();
             winratiolist.Columns.Clear();
             winratiolist.Columns.Add(new DataGridTextColumn() { Binding = new Binding("Weapon") });
-            foreach (var item in MainWindow.Stages)
+            foreach (var item in MainWindow.Stages.Concat(new[]{"すべて"}))
             {
-                winratiolist.Columns.Add(new DataGridTextColumn() { Header = item, Binding = new Binding("Datas[" + item + "]") { StringFormat = "0.0%" } });
+                var mb = new MultiBinding() { Converter=cv};
+                mb.Bindings.Add(new Binding("Datas[" + item + "].WinRatio"));
+                mb.Bindings.Add(new Binding("Datas[" + item + "].Count"));
+                winratiolist.Columns.Add(new DataGridTextColumn() { Header = item,Binding = mb });
+                
             }
-            winratiolist.Columns.Add(new DataGridTextColumn() { Header = "すべて", Binding = new Binding("Datas[すべて]") { StringFormat = "0.0%" } });
             ReadData();
 
         }
@@ -80,14 +84,7 @@ namespace SplatoonRecorder
             this.rule.ItemsSource = new[] { "すべて" }.Concat(r);
             stage.ItemsSource = new[] { "すべて" }.Concat(MainWindow.Stages.Intersect(Datas.Select(p => p.Stage)));
             weapon.SelectedIndex = rule.SelectedIndex = stage.SelectedIndex = 0;
-            if (tab.SelectedIndex == 0)
-            {
-                SelectionChangedAbst();
-            }
-            else if (tab.SelectedIndex == 1)
-            {
-                CalculateWinRatios();
-            }
+            Reload();
         }
 
         public void Analysis()
@@ -145,11 +142,11 @@ namespace SplatoonRecorder
                 killdeaths = killdeaths.OrderBy(p => p).ToList();
                 if (killdeaths.Count % 2 == 0)
                 {
-                    ad.MedianKillRatio = (killdeaths[killdeaths.Count / 2] + killdeaths[killdeaths.Count / 2 + 1]) * 0.5;
+                    ad.MedianKillRatio = (killdeaths[killdeaths.Count / 2] + killdeaths[killdeaths.Count / 2 - 1]) * 0.5;
                 }
                 else
                 {
-                    ad.MedianKillRatio = killdeaths[(killdeaths.Count + 1) / 2];
+                    ad.MedianKillRatio = killdeaths[(killdeaths.Count - 1) / 2];
                 }
 
                 this.killdeath.Visibility = System.Windows.Visibility.Visible;
@@ -219,20 +216,21 @@ namespace SplatoonRecorder
                             }
                             break;
                     }
-                    return new { Stage = q.Key, WinRatio = 1.0 * re.Count(r => r.IsWin) / re.Count };
+                    return new { Stage = q.Key, WinRatio = 1.0 * re.Count(r => r.IsWin) / re.Count,Count=re.Count };
                 }).ToList();
                 foreach (var item in MainWindow.Stages)
                 {
                     if (winratios.All(q => q.Stage != item))
                     {
-                        winratios.Add(new { Stage = item, WinRatio = double.NaN });
+                        winratios.Add(new { Stage = item, WinRatio = double.NaN,Count=0 });
                     }
                 }
-                return new { Weapon = p.Key, Datas = winratios.ToDictionary(q => q.Stage, q => q.WinRatio) };
+                return new { Weapon = p.Key, Datas = winratios.ToDictionary(q => q.Stage, q => new { q.WinRatio,q.Count }) };
             });
             winratiolist.ItemsSource = westg;
         }
 
+        
         private void Refresh_Click(object sender, RoutedEventArgs e)
         {
             ReadData();
@@ -299,8 +297,7 @@ namespace SplatoonRecorder
             }
             Analysis();
         }
-
-        private void tab_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        public void Reload()
         {
             if (tab.SelectedIndex == 0)
             {
@@ -312,16 +309,14 @@ namespace SplatoonRecorder
             }
         }
 
+        private void tab_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            Reload();
+        }
+
         private void viewCount_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (tab.SelectedIndex == 0)
-            {
-                SelectionChangedAbst();
-            }
-            else if (tab.SelectedIndex == 1)
-            {
-                CalculateWinRatios();
-            }
+            Reload();
         }
 
         private void weapon_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -377,8 +372,16 @@ namespace SplatoonRecorder
     {
         全試合, 最近30試合, 最近50試合, 最近100試合
     }
-    public class WinRatioData : DynamicObject
+    public class WinRatioConverter : IMultiValueConverter
     {
-        public string Weapon { get; set; }
+        public object Convert(object[] values, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            return values[1].Equals(0)?"":String.Format("{0:0.0%}({1}戦)", values[0], values[1]);
+        }
+
+        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, System.Globalization.CultureInfo culture)
+        {
+            return value.ToString().Split(':');
+        }
     }
 }
